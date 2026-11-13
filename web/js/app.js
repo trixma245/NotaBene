@@ -1,5 +1,5 @@
 // Point d'entrée : navigation entre les écrans et démarrage de l'appli.
-import { $, $$, h, toast, humanError } from './util.js';
+import { $, $$, h, toast, humanError, on, debounce, put } from './util.js';
 import { openDb, askPersist } from './db.js';
 import { applyTheme } from './settings.js';
 import { recorder } from './recorder.js';
@@ -39,7 +39,7 @@ async function route() {
     try {
       const mod = await load();
       if (my !== token) return;
-      view.replaceChildren(root);
+      put(view, root);
       window.scrollTo(0, 0);
       const c = await mod.default(root, { params: m.slice(1).map(x => x && decodeURIComponent(x)), query: new URLSearchParams(query) });
       if (my !== token) { if (typeof c === 'function') c(); return; }
@@ -48,7 +48,7 @@ async function route() {
       console.error(e);
       if (my !== token) return;
       const loadFail = /import|module|fetch/i.test(e?.message || '');
-      view.replaceChildren(h('div', { class: 'card' },
+      put(view, h('div', { class: 'card' },
         h('h2', null, loadFail ? 'Écran indisponible' : 'Oups, une erreur'),
         h('p', null, loadFail ? "Cet écran n'a pas pu être chargé. Si tu es hors ligne, ouvre l'appli une fois avec internet pour qu'elle se mette en mémoire." : humanError(e)),
         h('a', { class: 'btn primary', href: '#/' }, "Retour à l'accueil")));
@@ -78,6 +78,42 @@ async function start() {
   }
   askPersist();
   await route();
+  // Le reste se charge après l'affichage du premier écran
+  import('./pipeline.js').then(m => m.init()).catch(e => console.error(e));
+  import('./importer.js').then(m => {
+    m.installDrop();
+    if (new URLSearchParams(location.search).has('partage')) {
+      history.replaceState(null, '', location.pathname + location.hash);
+      m.takeShared().catch(e => toast(humanError(e), 'err'));
+    }
+  }).catch(e => console.error(e));
+  import('./srs.js').then(m => { m.updateBadge(); on('course', debounce(m.updateBadge, 1500)); setInterval(m.updateBadge, 10 * 60000); });
+  registerSW();
+}
+
+/** Mode hors ligne + mise à jour de l'appli quand une nouvelle version est publiée */
+function registerSW() {
+  if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+  let wantUpdate = false;   // on ne recharge que si l'utilisateur a demandé la mise à jour
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    const offer = w => {
+      const btn = h('button', { class: 'btn sm', style: 'margin-left:10px', onclick: () => { wantUpdate = true; w.postMessage('skipWaiting'); } }, 'Mettre à jour');
+      toast(h('span', null, 'Nouvelle version de NotaBene disponible.', btn), '', 30000);
+    };
+    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w?.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w); });
+    });
+    setInterval(() => reg.update().catch(() => {}), 60 * 60000);
+  }).catch(e => console.warn('Service worker indisponible', e));
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded || !wantUpdate) return;   // première installation : rien à recharger
+    reloaded = true;
+    if (recorder.state === 'idle') location.reload();
+    else toast('La mise à jour sera appliquée à la fin de l\'enregistrement.');
+  });
 }
 
 start();
