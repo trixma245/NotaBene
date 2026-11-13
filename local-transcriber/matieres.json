@@ -1,0 +1,14 @@
+{
+  "Algorithmique": "algorithme, pseudocode, AlgoBox, variable, affectation, boucle pour, tant que, répéter jusqu'à, si sinon, tableau, procédure, fonction, paramètre, récursivité, tri à bulles, organigramme, complexité",
+  "Langage C": "gcc, printf, scanf, pointeur, malloc, free, struct, tableau, chaîne de caractères, include, stdio.h, int main, compilation, boucle for, while, switch, fonction, adresse mémoire",
+  "Python": "print, input, def, liste, tuple, dictionnaire, boucle for, while, range, import, module, indentation, fonction, classe, chaîne de caractères, pip",
+  "JavaScript": "variable, let, const, function, DOM, getElementById, événement, addEventListener, tableau, objet, JSON, console.log, callback, promesse, async, await",
+  "HTML/CSS": "balise, attribut, div, span, classe, identifiant, sélecteur, flexbox, grid, margin, padding, responsive, media query, formulaire, lien hypertexte",
+  "Excel": "cellule, formule, fonction SOMME, MOYENNE, SI, RECHERCHEV, tableau croisé dynamique, graphique, référence absolue, référence relative, feuille de calcul, classeur, mise en forme conditionnelle",
+  "Word": "mise en page, style, table des matières, en-tête, pied de page, publipostage, saut de page, interligne, retrait, tabulation, note de bas de page",
+  "Maths": "ensemble, fonction, dérivée, intégrale, matrice, déterminant, vecteur, logique, proposition, base binaire, hexadécimal, probabilité, suite, limite",
+  "Communication": "émetteur, récepteur, message, canal, feedback, communication verbale, non verbale, écoute active, argumentation, exposé, compte rendu",
+  "Anglais technique": "hardware, software, network, router, switch, firewall, database, server, troubleshooting, bandwidth, wireless",
+  "ATO": "processeur, CPU, mémoire vive, RAM, ROM, carte mère, bus, registre, unité arithmétique et logique, disque dur, SSD, BIOS, périphérique, binaire, octet, bit",
+  "Réseaux": "TCP/IP, adresse IP, masque de sous-réseau, modèle OSI, routeur, commutateur, switch, Ethernet, adresse MAC, DNS, DHCP, passerelle, paquet, trame, protocole, IPv4, IPv6, VLAN, câble RJ45, octet"
+}
