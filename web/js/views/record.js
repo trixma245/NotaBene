@@ -1,5 +1,5 @@
 // Écran d'enregistrement : réglages avant de démarrer, puis suivi en direct.
-import { $, h, toast, fmtTime, fmtSize, fmtDur, confirmBox } from '../util.js';
+import { $, h, toast, fmtTime, fmtSize, fmtDur, confirmBox, add, put } from '../util.js';
 import { newCourse, getCourse, askPersist } from '../db.js';
 import { getSettings, setSettings } from '../settings.js';
 import { recorder, recorderSupport, batteryInfo, LivePreview } from '../recorder.js';
@@ -58,7 +58,7 @@ function setupView(root, existing) {
   };
   let cleanupLive = null;
 
-  root.append(
+  add(root, 
     head(existing ? 'Continuer un enregistrement' : 'Nouvel enregistrement', existing ? `#/c/${existing.id}` : '#/'),
     support && banner('err', support),
     existing && banner('info', `La suite sera ajoutée à « ${existing.title} » (déjà ${fmtDur(existing.duration)}).`),
@@ -120,7 +120,11 @@ function liveView(root, { live = false } = {}) {
     hideBlackout();
     const c = await recorder.stop();
     document.body.classList.remove('no-nav');
-    if (c?.id) { toast('Enregistrement sauvegardé ✓', 'ok'); location.hash = `#/c/${c.id}`; } else location.hash = '#/';
+    if (c?.id) {
+      toast('Enregistrement sauvegardé ✓', 'ok');
+      location.hash = `#/c/${c.id}`;
+      import('../pipeline.js').then(m => m.autoStart(c)).catch(e => console.error(e));
+    } else location.hash = '#/';
   }
 
   const onTick = () => {
@@ -138,7 +142,7 @@ function liveView(root, { live = false } = {}) {
   const onGap = e => {
     const g = e.detail;
     if (!g?.ms) return;
-    gapBox.append(banner('err', `⚠️ Coupure possible vers ${fmtTime(g.at)} : l'appli a été mise en veille pendant ${Math.round(g.ms / 1000)} s (écran verrouillé ou autre appli). Garde NotaBene à l'écran.`));
+    add(gapBox, banner('err', `⚠️ Coupure possible vers ${fmtTime(g.at)} : l'appli a été mise en veille pendant ${Math.round(g.ms / 1000)} s (écran verrouillé ou autre appli). Garde NotaBene à l'écran.`));
   };
   const onError = e => toast(e.detail.message, 'err', 12000);
   const onStop = () => { if (!stopped) { stopped = true; document.body.classList.remove('no-nav'); preview.stop(); hideBlackout(); const id = recorder.course?.id; location.hash = id ? `#/c/${id}` : '#/'; } };
@@ -166,8 +170,8 @@ function liveView(root, { live = false } = {}) {
 
   if (live) {
     preview.start((final, interim, err) => {
-      if (err) { liveBox.replaceChildren(h('i', null, 'Aperçu indisponible sur cet appareil (l\'enregistrement continue normalement).')); return; }
-      liveBox.replaceChildren(final, h('i', null, interim));
+      if (err) { put(liveBox, h('i', null, 'Aperçu indisponible sur cet appareil (l\'enregistrement continue normalement).')); return; }
+      put(liveBox, final, h('i', null, interim));
       liveBox.scrollTop = liveBox.scrollHeight;
     });
   }
@@ -195,7 +199,7 @@ function liveView(root, { live = false } = {}) {
   };
   bo.addEventListener('pointerdown', onTap);
 
-  root.append(
+  add(root, 
     h('div', { class: 'center', style: 'margin-top:8px' }, stateChip),
     timer,
     h('p', { class: 'muted small center' }, recorder.course?.title || ''),

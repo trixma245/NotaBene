@@ -1,6 +1,6 @@
 // Test de captation : 15 secondes pour vérifier, AVANT le cours, si la position de l'appareil
 // (sac, casier, table) donne un son exploitable.
-import { h, toast, fmtDur } from '../util.js';
+import { h, toast, fmtDur, add, put } from '../util.js';
 import { getSettings } from '../settings.js';
 import { recorder, recorderSupport, extOf } from '../recorder.js';
 import { decode, to16kMono, verdict } from '../audio.js';
@@ -44,7 +44,7 @@ export default async function test(root) {
     liveBox.classList.add('hidden');
     startBtn.disabled = false;
     startBtn.textContent = 'Refaire un test';
-    if (!blob || !blob.size) { result.replaceChildren(banner('err', 'Rien n\'a été enregistré. Vérifie que le micro est autorisé.')); return; }
+    if (!blob || !blob.size) { put(result, banner('err', 'Rien n\'a été enregistré. Vérifie que le micro est autorisé.')); return; }
     if (url) URL.revokeObjectURL(url);
     url = URL.createObjectURL(blob);
     let stats = null, samples = null;
@@ -54,7 +54,7 @@ export default async function test(root) {
     } catch { /* lecture seule possible */ }
     const v = stats ? verdict(stats) : null;
     const extra = h('div');
-    result.replaceChildren(h('div', { class: 'card' },
+    put(result, h('div', { class: 'card' },
       h('h3', null, 'Résultat'),
       h('audio', { controls: true, src: url, style: 'width:100%' }),
       stats && h('p', { class: 'small', style: 'margin-top:10px' },
@@ -66,7 +66,7 @@ export default async function test(root) {
     for (const load of TEST_BLOCKS) load().then(m => m.testBlock?.({ box: extra, samples, blob, ext: extOf(blob.type) })).catch(e => console.error(e));
   }
 
-  root.append(
+  add(root, 
     head('Test de captation'),
     support && banner('err', support),
     h('div', { class: 'card' },
@@ -91,4 +91,4 @@ export default async function test(root) {
   };
 }
 
-const TEST_BLOCKS = [];
+const TEST_BLOCKS = [() => import('../transcribe.js')];

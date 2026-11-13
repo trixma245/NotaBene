@@ -1,5 +1,5 @@
 // Traitement audio dans le navigateur : décodage, passage en mono 16 kHz,
-// filtre passe-haut, normalisation du volume, export WAV.
+// normalisation du volume (filtre passe-haut optionnel), export WAV.
 // 16 kHz mono est exactement ce qu'attend Whisper : inutile d'envoyer plus.
 
 export const SR = 16000;
@@ -51,11 +51,12 @@ export function normalize(x, stats = levelStats(x)) {
 }
 
 /**
- * AudioBuffer -> échantillons mono 16 kHz, nettoyés (passe-haut 80 Hz contre les
- * bruits sourds : ventilateur, clim, frottements du sac) puis normalisés.
+ * AudioBuffer -> échantillons mono 16 kHz, volume normalisé (gain simple, sans déformer le son).
+ * Le passe-haut 80 Hz est optionnel : mesuré sur un cours lointain et bruité, tout filtrage
+ * (passe-haut, débruitage) fait un peu PLUS d'erreurs avec Whisper que le son brut.
  * Renvoie aussi le niveau mesuré AVANT normalisation.
  */
-export async function to16kMono(ab, { clean = true } = {}) {
+export async function to16kMono(ab, { clean = true, highpass = false } = {}) {
   const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
   const len = Math.max(1, Math.round(ab.duration * SR));
   let x;
@@ -64,7 +65,7 @@ export async function to16kMono(ab, { clean = true } = {}) {
     const src = ctx.createBufferSource();
     src.buffer = ab;
     let node = src;
-    if (clean) {
+    if (clean && highpass) {
       const hp = ctx.createBiquadFilter();
       hp.type = 'highpass'; hp.frequency.value = 80; hp.Q.value = 0.707;
       node.connect(hp); node = hp;

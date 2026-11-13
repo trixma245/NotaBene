@@ -11,12 +11,14 @@ const DEFAULTS = {
   chain: false,                   // passe-haut + compresseur + gain pendant l'enregistrement
   gain: 2,
   livePreview: false,
+  autoTranscribe: true,           // transcrire tout seul après un enregistrement / un import
+  autoAi: true,                   // puis nettoyage + fiche + quiz avec Claude
   theme: 'dark',
   lastSubject: '',
 };
 
 export const CLAUDE_MODELS = [
-  { id: 'claude-opus-5-5', label: 'Claude Opus 5.5 — recommandé (meilleur rapport qualité/prix)' },
+  { id: 'claude-opus-5-5', label: 'Claude Opus 5.5 — recommandé (excellente qualité)' },
   { id: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5 — moins cher, très bon' },
   { id: 'claude-haiku-5-5', label: 'Claude Haiku 5.5 — le moins cher, plus simple' },
   { id: 'claude-fable-5-2', label: 'Claude Fable 5.2 — le plus puissant, le plus cher' },

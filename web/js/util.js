@@ -27,6 +27,11 @@ function append(el, kids) {
     else el.append(k.nodeType ? k : String(k));
   }
 }
+// Comme el.append / el.replaceChildren / el.prepend, mais en ignorant null et false et en
+// aplatissant les tableaux (les versions natives afficheraient « null » à l'écran).
+export const add = (el, ...kids) => { append(el, kids); return el; };
+export const put = (el, ...kids) => { el.replaceChildren(); append(el, kids); return el; };
+export const addFirst = (el, ...kids) => { const f = document.createDocumentFragment(); append(f, kids); el.prepend(f); return el; };
 
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -64,7 +69,26 @@ export const fmtDateTime = t => new Date(t).toLocaleString('fr-FR', { day: 'nume
 
 /** Texte simplifié pour chercher sans tenir compte des accents ni des majuscules */
 export const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+/** Pour la recherche : en plus, tirets et apostrophes = espaces (« trente deux » trouve « trente-deux »).
+ *  Chaque caractère reste à sa place, pour pouvoir surligner le texte d'origine. */
+export const snorm = s => norm(s).replace(/[-‐‑'’_]/g, ' ');
 export const safeName = s => String(s || 'cours').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || 'cours';
+
+/** Nœuds de texte avec les passages qui correspondent à `q` entourés de <mark> (sans tenir compte des accents) */
+export function markText(text, q) {
+  text = String(text ?? '').normalize('NFC');
+  const nq = snorm(q).trim();
+  if (!nq) return [text];
+  const nt = snorm(text), out = [];
+  let i = 0, j;
+  while ((j = nt.indexOf(nq, i)) >= 0) {
+    if (j > i) out.push(text.slice(i, j));
+    out.push(h('mark', null, text.slice(j, j + nq.length)));
+    i = j + nq.length;
+  }
+  if (i < text.length) out.push(text.slice(i));
+  return out;
+}
 
 export function debounce(fn, ms = 250) {
   let t;
