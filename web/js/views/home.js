@@ -1,5 +1,5 @@
 // Accueil : gros bouton rouge, cours récents.
-import { h, on, toast } from '../util.js';
+import { h, on, toast, add, put } from '../util.js';
 import { listCourses } from '../db.js';
 import { recorderSupport, recoverInterrupted } from '../recorder.js';
 import { courseItem, banner } from './common.js';
@@ -13,7 +13,7 @@ export default async function home(root) {
   const listBox = h('div', { class: 'list' });
   const extras = h('div');            // emplacement pour les blocs ajoutés par d'autres modules
 
-  root.append(
+  add(root, 
     h('div', { class: 'row' },
       h('div', { class: 'logo grow' }, h('img', { src: 'icons/icon-192.png', alt: '' }), h('h1', { style: 'margin:0' }, 'NotaBene')),
       installEvent && h('button', { class: 'btn sm', onclick: async e => { installEvent.prompt(); installEvent = null; e.target.remove(); } }, "⬇ Installer l'appli")),
@@ -31,7 +31,7 @@ export default async function home(root) {
 
   async function refresh() {
     const courses = await listCourses();
-    listBox.replaceChildren(...(courses.length
+    put(listBox, ...(courses.length
       ? [...courses.slice(0, 12).map(c => courseItem(c)),
         courses.length > 12 && h('a', { class: 'btn ghost block', href: '#/subjects' }, `Voir les ${courses.length} cours`)].filter(Boolean)
       : [h('div', { class: 'empty' }, 'Aucun cours pour l\'instant.', h('br'), 'Appuie sur le bouton rouge pour enregistrer ton premier cours.')]));
@@ -53,4 +53,8 @@ export default async function home(root) {
   return () => { alive = false; off(); cleanups.forEach(c => c()); };
 }
 
-const HOME_BLOCKS = [];
+const HOME_BLOCKS = [
+  () => import('../importer.js'),
+  () => import('./review.js'),
+  () => import('../pipeline.js'),
+];

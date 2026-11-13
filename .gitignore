@@ -28,6 +28,7 @@ local-transcriber/_tmp/
 *.webm
 *.mp4
 *.notabene.json
+*.notabene.zip
 notabene-sauvegarde-*.json
 !tests/audio/*.m4a
 

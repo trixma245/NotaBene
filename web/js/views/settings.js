@@ -1,5 +1,5 @@
 // Réglages : moteur de transcription, clés API, modèle Claude, apparence, stockage.
-import { h, toast, fmtSize, confirmBox, debounce } from '../util.js';
+import { h, toast, fmtSize, confirmBox, debounce, add, put } from '../util.js';
 import { getSettings, setSettings, getKeys, setKeys, CLAUDE_MODELS, ENGINES, applyTheme } from '../settings.js';
 import { listCourses, deleteAudio, storageInfo, askPersist } from '../db.js';
 import { testKey } from '../keys.js';
@@ -34,7 +34,7 @@ export default async function settingsView(root) {
     const info = await storageInfo();
     const courses = (await listCourses()).filter(c => c.hasAudio && c.size).sort((a, b) => b.size - a.size);
     const total = courses.reduce((n, c) => n + c.size, 0);
-    storageBox.replaceChildren(
+    put(storageBox, 
       h('p', null, `Audios des cours : `, h('b', null, fmtSize(total)),
         info.quota ? ` · Espace utilisé par l'appli : ${fmtSize(info.usage)} sur ${fmtSize(info.quota)} disponibles` : ''),
       info.quota ? h('div', { class: 'progress' }, h('i', { style: `width:${Math.min(100, info.usage / info.quota * 100).toFixed(1)}%` })) : null,
@@ -56,7 +56,7 @@ export default async function settingsView(root) {
         } }, 'Supprimer l\'audio')))));
   }
 
-  root.append(
+  add(root, 
     h('h1', null, 'Réglages'),
 
     h('div', { class: 'card' },
@@ -91,4 +91,7 @@ export default async function settingsView(root) {
   for (const load of SETTINGS_BLOCKS) load().then(m => m.settingsBlock?.({ extras, refresh: renderStorage })).catch(e => console.error(e));
 }
 
-const SETTINGS_BLOCKS = [];
+const SETTINGS_BLOCKS = [
+  () => import('../pipeline.js'),
+  () => import('../backup.js'),
+];

@@ -1,19 +1,27 @@
 // Page d'un cours : titre, matière, lecteur audio, étapes (transcrire, nettoyer, fiche...) et onglets.
 // Chaque fonctionnalité (transcription, fiche, quiz...) est un petit module dans js/course/.
-import { h, on, toast, fmtDur, fmtDate, fmtSize, confirmBox, promptBox, menuBox, humanError } from '../util.js';
+import { h, on, toast, fmtDur, fmtDate, fmtSize, confirmBox, promptBox, menuBox, humanError, add, put } from '../util.js';
 import { getCourse, saveCourse, deleteCourse, deleteAudio } from '../db.js';
 import { Player } from '../player.js';
 import { head, subjectSelect, banner } from './common.js';
 
 /* Modules de fonctionnalités, dans l'ordre des onglets. Chacun exporte par défaut :
    { id, label, has(course), step(course, ctx), render(panel, course, ctx), menu(course, ctx), noAudio(course, ctx), cleanup() } */
-const FEATURES = [];
+const FEATURES = [
+  () => import('../course/steps.js'),
+  () => import('../course/sheet.js'),
+  () => import('../course/quiz.js'),
+  () => import('../course/cards.js'),
+  () => import('../course/clean.js'),
+  () => import('../course/raw.js'),
+  () => import('../course/more.js'),
+];
 
 export default async function courseView(root, { params, query }) {
   const id = params[0];
   let course = await getCourse(id);
   if (!course) {
-    root.append(head('Cours introuvable'), h('div', { class: 'empty' }, 'Ce cours n\'existe pas (ou plus) sur cet appareil.'));
+    add(root, head('Cours introuvable'), h('div', { class: 'empty' }, 'Ce cours n\'existe pas (ou plus) sur cet appareil.'));
     return;
   }
   const feats = (await Promise.all(FEATURES.map(load => load().then(m => m.default).catch(e => { console.error(e); return null; })))).filter(Boolean);
@@ -43,9 +51,9 @@ export default async function courseView(root, { params, query }) {
     playerBox.replaceChildren();
     if (course.hasAudio && course.parts?.length) {
       player = new Player(course);
-      playerBox.append(player.el);
+      add(playerBox, player.el);
     } else {
-      playerBox.append(h('div', { class: 'card' },
+      add(playerBox, h('div', { class: 'card' },
         h('p', { class: 'muted', style: 'margin:0' }, '🔇 Ce cours n\'a pas d\'audio sur cet appareil.'),
         feats.map(f => f.noAudio?.(course, ctx))));
     }
@@ -54,8 +62,8 @@ export default async function courseView(root, { params, query }) {
   function renderHeader() {
     titleEl.textContent = course.title;
     metaEl.textContent = [fmtDate(course.createdAt), course.duration ? fmtDur(course.duration) : null, course.size ? fmtSize(course.size) : null].filter(Boolean).join(' · ');
-    subjBox.replaceChildren(subjectSelect(course.subjectId, async v => { course.subjectId = v; await saveCourse(course); }));
-    noteBox.replaceChildren(
+    put(subjBox, subjectSelect(course.subjectId, async v => { course.subjectId = v; await saveCourse(course); }));
+    put(noteBox, 
       ...(course.recovered ? [banner('ok', 'Cet enregistrement a été récupéré après une fermeture imprévue de l\'appli.')] : []),
       ...(course.gaps?.length ? [banner('warn', `⚠️ ${course.gaps.length} coupure(s) possible(s) pendant l'enregistrement (appli mise en veille) : vers ${course.gaps.slice(0, 6).map(g => fmtDurShort(g.at)).join(', ')}.`)] : []));
   }
@@ -63,16 +71,16 @@ export default async function courseView(root, { params, query }) {
 
   function renderBody() {
     const steps = feats.map(f => f.step?.(course, ctx)).filter(Boolean);
-    stepsBox.replaceChildren(...(steps.length ? [h('div', { class: 'card stack' }, steps)] : []));
+    put(stepsBox, ...(steps.length ? [h('div', { class: 'card stack' }, steps)] : []));
     const tabs = feats.filter(f => f.render);
     if (!tabs.length) { tabsBar.replaceChildren(); panel.replaceChildren(); return; }
-    if (!tabs.some(f => f.id === tab)) tab = ([...tabs].reverse().find(f => f.has?.(course)) || tabs[0]).id;
-    tabsBar.replaceChildren(...tabs.map(f => h('button', {
+    if (!tabs.some(f => f.id === tab)) tab = (tabs.find(f => f.has?.(course)) || tabs[tabs.length - 1]).id;
+    put(tabsBar, ...tabs.map(f => h('button', {
       class: f.id === tab ? 'active' : '',
       onclick: () => { tab = f.id; history.replaceState(null, '', `#/c/${id}/${tab}`); renderBody(); },
     }, f.label, f.has?.(course) ? '' : ' ·')));
     panel.replaceChildren();
-    try { tabs.find(f => f.id === tab).render(panel, course, ctx); } catch (e) { console.error(e); panel.append(banner('err', humanError(e))); }
+    try { tabs.find(f => f.id === tab).render(panel, course, ctx); } catch (e) { console.error(e); add(panel, banner('err', humanError(e))); }
   }
 
   const audioSig = c => `${c.hasAudio}|${(c.parts || []).map(p => `${p.part}:${p.size}`).join(',')}`;
@@ -124,7 +132,7 @@ export default async function courseView(root, { params, query }) {
     if (el && panel.contains(el)) { e.preventDefault(); ctx.seek(+el.dataset.t); }
   });
 
-  root.append(
+  add(root, 
     h('div', { class: 'head' },
       h('a', { class: 'btn back ghost', href: course.subjectId ? `#/s/${course.subjectId}` : '#/', 'aria-label': 'Retour' }, '←'),
       titleEl,
