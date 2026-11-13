@@ -1,0 +1,42 @@
+# --- Secrets : ne jamais publier de clé API ---
+.env
+.env.*
+*.key
+cles.txt
+clés.txt
+secrets*
+
+# --- Mes fichiers personnels (ne pas publier) ---
+PROMPT_CLAUDE_CODE.md
+
+# --- Transcripteur local : gros fichiers et données personnelles ---
+local-transcriber/.venv/
+local-transcriber/modeles/
+local-transcriber/a_transcrire/*
+!local-transcriber/a_transcrire/LISEZ-MOI.txt
+local-transcriber/transcriptions/*
+!local-transcriber/transcriptions/LISEZ-MOI.txt
+local-transcriber/journal.log
+local-transcriber/_tmp/
+
+# --- Audios et sauvegardes (mes cours ne vont pas sur GitHub) ---
+*.wav
+*.mp3
+*.m4a
+*.ogg
+*.opus
+*.webm
+*.mp4
+*.notabene.json
+notabene-sauvegarde-*.json
+!tests/audio/*.m4a
+
+# --- Python / système / éditeurs ---
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+node_modules/

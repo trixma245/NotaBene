@@ -1,0 +1,1 @@
+Les transcriptions arrivent ici : .txt (texte), .srt (sous-titres), .notabene.json (a importer dans NotaBene).

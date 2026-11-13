@@ -1,0 +1,3 @@
+Depose ici tes fichiers audio (m4a, mp3, wav, ogg, opus, webm, mp4, zip NotaBene).
+Lance SURVEILLER.bat : ils seront transcrits automatiquement.
+Astuce : cree un sous-dossier au nom de la matiere (ex. "Reseaux") pour utiliser son vocabulaire.
